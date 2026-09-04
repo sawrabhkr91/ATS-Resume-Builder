@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Free ATS Resume Builder</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background: #f4f7f6; margin: 0; padding: 20px; }
+    .container { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto; flex-wrap: wrap; }
+    .editor, .preview-container { flex: 1; min-width: 320px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; color: #333; }
+    label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; }
+    textarea { height: 80px; resize: vertical; }
+    button { background: #007bff; color: white; border: none; padding: 12px 20px; margin-top: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+    button:hover { background: #0056b3; }
+    
+    /* ATS Single-Column Document Layout */
+    #resume-preview { width: 100%; min-height: 600px; padding: 30px; background: #fff; border: 1px solid #ddd; color: #111; line-height: 1.5; }
+    .res-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+    .res-contact { font-size: 12px; margin-bottom: 15px; color: #444; border-bottom: 1px solid #000; padding-bottom: 8px; }
+    .res-section-title { font-size: 14px; font-weight: bold; text-transform: uppercase; margin-top: 15px; border-bottom: 1px solid #000; padding-bottom: 2px; }
+    .res-text { font-size: 12px; white-space: pre-line; margin-top: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="editor">
+      <h2>ATS Resume Builder</h2>
+      <label>Full Name</label>
+      <input type="text" id="name" value="JOHN DOE" oninput="updateResume()">
+      
+      <label>Contact Info (Phone | Email | LinkedIn | Location)</label>
+      <input type="text" id="contact" value="+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY" oninput="updateResume()">
+      
+      <label>Professional Summary</label>
+      <textarea id="summary" oninput="updateResume()">Results-driven software developer with 4+ years of experience building scalable web applications. Proficient in JavaScript, React, and REST APIs.</textarea>
+      
+      <label>Work Experience</label>
+      <textarea id="experience" oninput="updateResume()">Software Engineer - Tech Corp (2022 - Present)
+• Built responsive user interfaces using React and reduced page load times by 30%.
+• Collaborated with cross-functional teams to deploy RESTful API integrations.
+
+Junior Developer - Web Solutions (2020 - 2022)
+• Maintained database systems and wrote automated unit tests.</textarea>
+      
+      <label>Education</label>
+      <textarea id="education" oninput="updateResume()">B.S. in Computer Science - University of Technology (2016 - 2020)</textarea>
+      
+      <label>Skills (Comma-separated)</label>
+      <input type="text" id="skills" value="JavaScript, React, Node.js, HTML/CSS, Git, SQL" oninput="updateResume()">
+
+      <button onclick="downloadPDF()">Download ATS PDF</button>
+    </div>
+
+    <div class="preview-container">
+      <h2>Live Preview</h2>
+      <div id="resume-preview">
+        <div class="res-name" id="p-name">JOHN DOE</div>
+        <div class="res-contact" id="p-contact">+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY</div>
+        
+        <div class="res-section-title">Professional Summary</div>
+        <div class="res-text" id="p-summary"></div>
+        
+        <div class="res-section-title">Work Experience</div>
+        <div class="res-text" id="p-experience"></div>
+        
+        <div class="res-section-title">Education</div>
+        <div class="res-text" id="p-education"></div>
+        
+        <div class="res-section-title">Skills</div>
+        <div class="res-text" id="p-skills"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateResume() {
+      document.getElementById('p-name').innerText = document.getElementById('name').value;
+      document.getElementById('p-contact').innerText = document.getElementById('contact').value;
+      document.getElementById('p-summary').innerText = document.getElementById('summary').value;
+      document.getElementById('p-experience').innerText = document.getElementById('experience').value;
+      document.getElementById('p-education').innerText = document.getElementById('education').value;
+      document.getElementById('p-skills').innerText = document.getElementById('skills').value;
+    }
+
+    function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const element = document.getElementById('resume-preview');
+      html2canvas(element, { scale: 2 }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('ATS_Resume.pdf');
+      });
+    }
+
+    // Initialize preview on page load
+    updateResume();
+  </script>
+</body>
+</html>

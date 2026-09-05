@@ -5,14 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ATS Resume Builder</title>
 
-  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- html2pdf.js CDN for client-side PDF generation -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
-    /* Standard A4 Sheet Dimensions */
+    /* Standard A4 Dimensions: 210mm x 297mm */
     .a4-sheet {
       width: 210mm;
       min-height: 297mm;
@@ -20,12 +18,7 @@
       box-sizing: border-box;
     }
 
-    /* Prevent mobile browser font scaling inside inputs */
-    input, textarea {
-      font-size: 16px !important;
-    }
-
-    /* Print styles */
+    /* Print styles to ensure clean standard layout */
     @media print {
       body {
         background: none;
@@ -43,58 +36,35 @@
 </head>
 <body class="bg-gray-100 h-screen flex flex-col font-sans overflow-hidden">
 
-  <!-- Mobile Navigation Header (Only on small screens) -->
-  <header class="md:hidden flex bg-white border-b p-3 justify-between items-center no-print z-10 shadow-sm">
-    <h1 class="font-bold text-gray-800 text-base">ATS Builder</h1>
-    <div class="flex bg-gray-100 p-1 rounded-lg">
-      <button id="btn-tab-edit" onclick="switchMobileTab('edit')" class="px-4 py-1.5 bg-white text-blue-600 rounded-md text-xs font-bold shadow-sm transition-all">
-        Edit Form
-      </button>
-      <button id="btn-tab-preview" onclick="switchMobileTab('preview')" class="px-4 py-1.5 text-gray-600 rounded-md text-xs font-bold transition-all">
-        Live Preview
-      </button>
-    </div>
-  </header>
+  <div class="md:hidden flex bg-white border-b p-2 justify-center gap-3 no-print z-10 shadow-sm">
+    <button id="btn-tab-edit" onclick="switchMobileTab('edit')" class="px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold shadow">
+      Edit Resume
+    </button>
+    <button id="btn-tab-preview" onclick="switchMobileTab('preview')" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold">
+      Full Preview
+    </button>
+  </div>
 
-  <!-- Main Container -->
   <div class="flex-1 flex overflow-hidden">
 
-    <!-- Left Panel: Form Controls -->
-    <div id="panel-editor" class="flex-1 overflow-y-auto p-4 md:p-6 max-w-xl mx-auto w-full border-r bg-white shadow-sm">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h1 class="text-xl font-bold text-gray-900">ATS Resume Builder</h1>
-          <p class="text-xs text-gray-500">Fill in details to generate a clean, ATS-scannable resume.</p>
-        </div>
-        <button onclick="downloadPDF()" class="md:hidden bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-bold shadow">
-          Download
-        </button>
-      </div>
+    <div id="panel-editor" class="flex-1 overflow-y-auto p-4 md:p-6 max-w-xl mx-auto w-full border-r bg-white">
+      <h1 class="text-xl font-bold mb-4 text-gray-800">ATS Resume Builder</h1>
 
       <form id="resume-form" oninput="updatePreview()" class="space-y-6">
-        <!-- Personal Info -->
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-          <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide">Personal Details</h2>
-          <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Full Name</label>
-            <input type="text" id="in-name" value="JOHN DOE" placeholder="e.g. Sawrabh Kar" class="w-full p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-600 mb-1">Contact Header Line</label>
-            <input type="text" id="in-contact" value="+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY" placeholder="Phone | Email | LinkedIn | Location" class="w-full p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" />
-          </div>
+        <div class="space-y-3">
+          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Personal Details</h2>
+          <input type="text" id="in-name" value="JOHN DOE" placeholder="Full Name" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input type="text" id="in-contact" value="+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY" placeholder="Contact Info Line" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
 
-        <!-- Summary -->
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-          <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide">Professional Summary</h2>
-          <textarea id="in-summary" rows="3" class="w-full p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Write a concise overview...">Results-driven professional with 5+ years of experience in managing cross-functional projects, optimizing workflows, and delivering strategic business solutions.</textarea>
+        <div class="space-y-3">
+          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Professional Summary</h2>
+          <textarea id="in-summary" rows="3" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Summary statement...">Results-driven professional with 5+ years of experience in managing cross-functional projects, optimizing workflows, and delivering strategic business solutions.</textarea>
         </div>
 
-        <!-- Work Experience -->
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-          <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide">Work Experience</h2>
-          <textarea id="in-experience" rows="6" class="w-full p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Job Title | Company | Dates&#10;• Bullet points...">Senior Project Specialist | Tech Solutions Inc. | 2021 - Present
+        <div class="space-y-3">
+          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Work Experience</h2>
+          <textarea id="in-experience" rows="5" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Experience details...">Senior Project Specialist | Tech Solutions Inc. | 2021 - Present
 • Spearheaded cross-functional teams to deliver 15+ software releases on time.
 • Reduced operational bottlenecks by 25% through process automation.
 
@@ -102,68 +72,56 @@ Project Coordinator | Innovate Co. | 2018 - 2021
 • Managed client communications and project documentation for key accounts.</textarea>
         </div>
 
-        <!-- Education -->
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-          <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide">Education</h2>
-          <textarea id="in-education" rows="3" class="w-full p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Degree, Institution, Year...">Bachelor of Science in Business Administration
+        <div class="space-y-3">
+          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Education</h2>
+          <textarea id="in-education" rows="3" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Education details...">Bachelor of Science in Business Administration
 State University | Graduated: 2018</textarea>
         </div>
 
-        <!-- Skills -->
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3">
-          <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide">Skills</h2>
-          <textarea id="in-skills" rows="3" class="w-full p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="List core competencies...">Project Management, Data Analysis, Agile/Scrum, Process Optimization, Technical Writing</textarea>
+        <div class="space-y-3">
+          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Skills</h2>
+          <textarea id="in-skills" rows="3" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="List skills...">Project Management, Data Analysis, Agile/Scrum, Process Optimization, Technical Writing</textarea>
         </div>
       </form>
     </div>
 
-    <!-- Right Panel: Live Preview Sheet -->
     <div id="panel-preview" class="hidden md:flex flex-1 bg-gray-200 overflow-y-auto p-4 flex-col items-center justify-start">
       
-      <!-- Top Action Bar -->
       <div class="w-full max-w-[210mm] flex justify-between items-center mb-3 no-print">
-        <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider">A4 Preview View</span>
-        <button onclick="downloadPDF()" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md text-sm font-bold shadow transition-all">
-          Download PDF
+        <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider">A4 Preview Sheet</span>
+        <button onclick="downloadPDF()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-bold shadow transition-colors flex items-center gap-1">
+          <span>Download PDF</span>
         </button>
       </div>
 
-      <!-- Mobile/Desktop Scaled Preview Container -->
       <div class="w-full overflow-x-auto flex justify-center py-2">
-        <div id="scale-wrapper" class="origin-top transform scale-[0.42] sm:scale-[0.65] md:scale-[0.82] lg:scale-100 transition-transform">
+        <div id="scale-wrapper" class="origin-top transform scale-[0.42] sm:scale-[0.65] md:scale-[0.85] lg:scale-100 transition-transform">
           
-          <!-- Resume Sheet Container -->
-          <div id="resume-sheet" class="a4-sheet p-[15mm] text-black shadow-2xl text-sm leading-relaxed">
-            <!-- Name -->
-            <div id="pv-name" class="text-2xl font-bold uppercase border-b-2 border-black pb-1 text-center tracking-wide">JOHN DOE</div>
+          <div id="resume-sheet" class="a4-sheet p-[15mm] text-black shadow-xl text-sm leading-relaxed">
+            <div id="pv-name" class="text-2xl font-bold uppercase border-b-2 border-black pb-1 text-center">JOHN DOE</div>
             
-            <!-- Contact Info -->
             <div id="pv-contact" class="text-xs text-center my-2 text-gray-800">
               +1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY
             </div>
 
-            <!-- Summary -->
-            <div class="mt-5">
-              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1.5 tracking-wider">Professional Summary</h3>
-              <p id="pv-summary" class="whitespace-pre-line text-xs text-gray-900 leading-normal"></p>
+            <div class="mt-4">
+              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1">Professional Summary</h3>
+              <p id="pv-summary" class="whitespace-pre-line text-xs">Results-driven professional with 5+ years of experience in managing cross-functional projects...</p>
             </div>
 
-            <!-- Experience -->
-            <div class="mt-5">
-              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1.5 tracking-wider">Work Experience</h3>
-              <div id="pv-experience" class="whitespace-pre-line text-xs text-gray-900 leading-relaxed"></div>
+            <div class="mt-4">
+              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1">Work Experience</h3>
+              <div id="pv-experience" class="whitespace-pre-line text-xs">Senior Project Specialist...</div>
             </div>
 
-            <!-- Education -->
-            <div class="mt-5">
-              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1.5 tracking-wider">Education</h3>
-              <div id="pv-education" class="whitespace-pre-line text-xs text-gray-900 leading-relaxed"></div>
+            <div class="mt-4">
+              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1">Education</h3>
+              <div id="pv-education" class="whitespace-pre-line text-xs">Bachelor of Science...</div>
             </div>
 
-            <!-- Skills -->
-            <div class="mt-5">
-              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1.5 tracking-wider">Skills & Competencies</h3>
-              <div id="pv-skills" class="whitespace-pre-line text-xs text-gray-900 leading-relaxed"></div>
+            <div class="mt-4">
+              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1">Skills</h3>
+              <div id="pv-skills" class="whitespace-pre-line text-xs">Project Management...</div>
             </div>
           </div>
 
@@ -174,19 +132,18 @@ State University | Graduated: 2018</textarea>
 
   </div>
 
-  <!-- JavaScript Logic -->
   <script>
-    // Synchronize inputs with preview
+    // Real-time synchronization from form inputs to preview sheet
     function updatePreview() {
       document.getElementById('pv-name').innerText = document.getElementById('in-name').value || 'YOUR NAME';
-      document.getElementById('pv-contact').innerText = document.getElementById('in-contact').value || '';
+      document.getElementById('pv-contact').innerText = document.getElementById('in-contact').value || 'Contact Info';
       document.getElementById('pv-summary').innerText = document.getElementById('in-summary').value || '';
       document.getElementById('pv-experience').innerText = document.getElementById('in-experience').value || '';
       document.getElementById('pv-education').innerText = document.getElementById('in-education').value || '';
       document.getElementById('pv-skills').innerText = document.getElementById('in-skills').value || '';
     }
 
-    // Toggle Tab view for mobile browsers
+    // Toggle between Editor and Preview on mobile viewports
     function switchMobileTab(tab) {
       const editor = document.getElementById('panel-editor');
       const preview = document.getElementById('panel-preview');
@@ -196,36 +153,35 @@ State University | Graduated: 2018</textarea>
       if (tab === 'edit') {
         editor.classList.remove('hidden');
         preview.classList.add('hidden');
-        btnEdit.className = "px-4 py-1.5 bg-white text-blue-600 rounded-md text-xs font-bold shadow-sm transition-all";
-        btnPreview.className = "px-4 py-1.5 text-gray-600 rounded-md text-xs font-bold transition-all";
+        btnEdit.className = "px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold shadow";
+        btnPreview.className = "px-5 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold";
       } else {
         editor.classList.add('hidden');
         preview.classList.remove('hidden');
         preview.classList.add('flex');
-        btnPreview.className = "px-4 py-1.5 bg-white text-blue-600 rounded-md text-xs font-bold shadow-sm transition-all";
-        btnEdit.className = "px-4 py-1.5 text-gray-600 rounded-md text-xs font-bold transition-all";
+        btnPreview.className = "px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold shadow";
+        btnEdit.className = "px-5 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold";
       }
     }
 
-    // PDF Download via Off-screen Node Cloning (Fixes left-side clipping and truncation)
+    // Download PDF without cropping, text truncation, or transform offset bugs
     function downloadPDF() {
       const originalSheet = document.getElementById('resume-sheet');
 
-      // 1. Deep clone original sheet so layout changes don't affect live UI
+      // 1. Create an off-screen clone free of CSS transform/scaling issues
       const clone = originalSheet.cloneNode(true);
+      const tempContainer = document.createElement('div');
+      
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '210mm';
+      tempContainer.style.transform = 'none';
+      tempContainer.appendChild(clone);
 
-      // 2. Wrap clone in an unscaled, isolated off-screen wrapper
-      const tempWrapper = document.createElement('div');
-      tempWrapper.style.position = 'fixed';
-      tempWrapper.style.left = '-9999px';
-      tempWrapper.style.top = '0';
-      tempWrapper.style.width = '210mm';
-      tempWrapper.style.transform = 'none'; // Absolutely zero CSS transform
-      tempWrapper.appendChild(clone);
+      document.body.appendChild(tempContainer);
 
-      document.body.appendChild(tempWrapper);
-
-      // 3. Configure html2pdf with explicit offsets and full-page capture
+      // 2. Configure html2pdf parameters
       const options = {
         margin: 0,
         filename: 'Resume.pdf',
@@ -241,13 +197,14 @@ State University | Graduated: 2018</textarea>
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
       };
 
-      // 4. Generate PDF from unscaled clone and clean up
+      // 3. Generate and initiate file save prompt
       html2pdf().set(options).from(clone).save().then(() => {
-        document.body.removeChild(tempWrapper);
+        // Remove temporary node after export completes
+        document.body.removeChild(tempContainer);
       });
     }
 
-    // Initial view population
+    // Initialize layout sync on launch
     updatePreview();
   </script>
 </body>

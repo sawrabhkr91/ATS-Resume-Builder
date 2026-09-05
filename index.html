@@ -18,6 +18,21 @@
     textarea { height: 80px; resize: vertical; }
     button { background: #007bff; color: white; border: none; padding: 12px 20px; margin-top: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
     button:hover { background: #0056b3; }
+    .resource-link {
+      display: block;
+      text-align: center;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: #f4f7f6;
+      color: #555;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+      text-decoration: none;
+      box-sizing: border-box;
+    }
+    .resource-link:hover { background: #e9ecec; }
 
     /* ATS Single-Column Document Layout */
     #resume-preview { width: 100%; min-height: 600px; padding: 30px; background: #fff; border: 1px solid #ddd; color: #111; line-height: 1.5; }
@@ -61,7 +76,7 @@
       <input type="text" id="name" value="JOHN DOE" oninput="updateResume()">
       
       <label>Contact Info (Phone | Email | LinkedIn | Location)</label>
-      <input type="text" id="contact" value="+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY" oninput="updateResume()">
+      <input type="text" id="contact" value="+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | USA" oninput="updateResume()">
 
       <label>Professional Summary</label>
       <textarea id="summary" oninput="updateResume()">Results-driven software developer with 4+ years of experience building scalable web applications. Proficient in JavaScript, React, and REST APIs.</textarea>
@@ -84,13 +99,17 @@ Junior Developer - Web Solutions (2020 - 2022)
       <input type="text" id="address" value="123 Main Street, Apt 4B, New York, NY 10001" oninput="updateResume()">
 
       <button onclick="downloadPDF()">Download ATS PDF</button>
+
+      <a href="https://www.up-4ever.net/yr7r2wi2n44a" target="_blank" rel="noopener noreferrer" class="resource-link">
+        Resume Templates &amp; Examples
+      </a>
     </div>
 
     <div class="preview-container">
       <h2>Live Preview</h2>
       <div id="resume-preview">
         <div class="res-name" id="p-name">JOHN DOE</div>
-        <div class="res-contact" id="p-contact">+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY</div>
+        <div class="res-contact" id="p-contact">+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | USA</div>
 
         <div class="res-section-title">Professional Summary</div>
         <div class="res-text" id="p-summary"></div>
@@ -122,29 +141,27 @@ Junior Developer - Web Solutions (2020 - 2022)
     }
 
     function downloadPDF() {
+      // 1. Open the Up-4ever monetization link in a new tab
+      window.open("https://www.up-4ever.net/yr7r2wi2n44a", "_blank", "noopener,noreferrer");
+
+      // 2. Generate and download the PDF locally
       const { jsPDF } = window.jspdf;
       const original = document.getElementById('resume-preview');
 
       // Clone the resume into an isolated, off-screen wrapper at a fixed width.
-      // Capturing the on-page element directly (inside the flex layout) is what
-      // causes html2canvas to miscalculate the capture region and clip the left edge.
       const clone = original.cloneNode(true);
       const wrapper = document.createElement('div');
       wrapper.style.position = 'fixed';
       wrapper.style.top = '0';
       wrapper.style.left = '0';
       wrapper.style.zIndex = '-1000';
-      wrapper.style.width = '800px';      // fixed pixel width = predictable A4 scaling
+      wrapper.style.width = '800px';
       wrapper.style.margin = '0';
       wrapper.style.background = '#ffffff';
 
       clone.style.width = '800px';
       clone.style.boxSizing = 'border-box';
 
-      // Media queries are based on viewport width, not the clone's width, so on a
-      // phone the mobile font sizes would otherwise leak into the PDF. Force the
-      // original (desktop) sizes here so the PDF always looks the same regardless
-      // of the device it was generated on.
       clone.style.padding = '30px';
       clone.style.minHeight = '600px';
       const setSize = (selector, fontSize, extra = {}) => {
@@ -186,10 +203,10 @@ Junior Developer - Web Solutions (2020 - 2022)
         const pageHeight = pdf.internal.pageSize.getHeight();
         const imgProps = pdf.getImageProperties(imgData);
 
-        const margin = 10; // equal margin (mm) on all sides so content is centered, not edge-to-edge
+        const margin = 10;
         const imgWidth = pageWidth - margin * 2;
         const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-        const xOffset = margin; // (pageWidth - imgWidth) / 2 === margin, since imgWidth already accounts for both sides
+        const xOffset = margin;
 
         const usableHeight = pageHeight - margin * 2;
         let heightLeft = imgHeight;

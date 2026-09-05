@@ -2,234 +2,217 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ATS Resume Builder</title>
-
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- html2pdf.js CDN for client-side PDF generation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Free ATS Resume Builder</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
-    /* Standard A4 Dimensions: 210mm x 296mm (296mm prevents blank 2nd page) */
-    .a4-sheet {
-      width: 210mm;
-      min-height: 296mm;
-      background-color: #ffffff;
-      box-sizing: border-box;
-      margin: 0 auto;
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    body { background: #f4f7f6; margin: 0; padding: 20px; }
+    .container { display: flex; gap: 20px; max-width: 1200px; margin: 0 auto; flex-wrap: wrap; }
+    .editor, .preview-container { flex: 1; min-width: 320px; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; color: #333; }
+    label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; } /* 16px prevents iOS auto-zoom on focus */
+    textarea { height: 80px; resize: vertical; }
+    button { background: #007bff; color: white; border: none; padding: 12px 20px; margin-top: 15px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
+    button:hover { background: #0056b3; }
+
+    /* ATS Single-Column Document Layout */
+    #resume-preview { width: 100%; min-height: 600px; padding: 30px; background: #fff; border: 1px solid #ddd; color: #111; line-height: 1.5; }
+    .res-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+    .res-contact { font-size: 12px; margin-bottom: 15px; color: #444; border-bottom: 1px solid #000; padding-bottom: 8px; }
+    .res-address { font-size: 12px; margin-top: 5px; color: #444; }
+    .res-section-title { font-size: 14px; font-weight: bold; text-transform: uppercase; margin-top: 15px; border-bottom: 1px solid #000; padding-bottom: 2px; }
+    .res-text { font-size: 12px; white-space: pre-line; margin-top: 5px; }
+
+    /* Tablet and below: stack the editor and preview, ease up on outer padding */
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      .container { gap: 16px; }
+      .editor, .preview-container { min-width: 100%; padding: 16px; }
+      h2 { font-size: 20px; }
     }
 
-    /* Print styles to ensure clean standard layout */
-    @media print {
-      body {
-        background: none;
-      }
-      .no-print {
-        display: none !important;
-      }
-      .a4-sheet {
-        box-shadow: none;
-        margin: 0;
-        width: 100%;
-      }
+    /* Phones: tighten the live-preview typography so the resume reads well on a small screen */
+    @media (max-width: 480px) {
+      body { padding: 8px; }
+      .editor, .preview-container { padding: 12px; border-radius: 6px; }
+      h2 { font-size: 18px; }
+      label { font-size: 13px; }
+      button { font-size: 15px; padding: 12px 16px; }
+
+      #resume-preview { padding: 16px; min-height: auto; }
+      .res-name { font-size: 19px; }
+      .res-contact { font-size: 11px; padding-bottom: 6px; margin-bottom: 10px; }
+      .res-address { font-size: 11px; }
+      .res-section-title { font-size: 12.5px; margin-top: 12px; }
+      .res-text { font-size: 11px; line-height: 1.45; }
     }
   </style>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col font-sans overflow-hidden">
+<body>
 
-  <!-- Mobile Navigation Switcher (Visible only on mobile/tablet viewports) -->
-  <div class="md:hidden flex bg-white border-b p-2 justify-center gap-3 no-print z-10 shadow-sm">
-    <button id="btn-tab-edit" onclick="switchMobileTab('edit')" class="px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold shadow">
-      Edit Resume
-    </button>
-    <button id="btn-tab-preview" onclick="switchMobileTab('preview')" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold">
-      Full Preview
-    </button>
-  </div>
+  <div class="container">
+    <div class="editor">
+      <h2>ATS Resume Builder</h2>
+      <label>Full Name</label>
+      <input type="text" id="name" value="JOHN DOE" oninput="updateResume()">
 
-  <!-- Main Workspace -->
-  <div class="flex-1 flex overflow-hidden">
+      <label>Contact Info (Phone | Email | LinkedIn | Location)</label>
+      <input type="text" id="contact" value="+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY" oninput="updateResume()">
 
-    <!-- Left Panel: Form Controls -->
-    <div id="panel-editor" class="flex-1 overflow-y-auto p-4 md:p-6 max-w-xl mx-auto w-full border-r bg-white">
-      <h1 class="text-xl font-bold mb-4 text-gray-800">ATS Resume Builder</h1>
+      <label>Professional Summary</label>
+      <textarea id="summary" oninput="updateResume()">Results-driven software developer with 4+ years of experience building scalable web applications. Proficient in JavaScript, React, and REST APIs.</textarea>
 
-      <form id="resume-form" oninput="updatePreview()" class="space-y-6">
-        <!-- Personal Info -->
-        <div class="space-y-3">
-          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Personal Details</h2>
-          <input type="text" id="in-name" value="SAWRABH KAR" placeholder="Full Name" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" />
-          <input type="text" id="in-contact" value="+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY" placeholder="Contact Info Line" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" />
-        </div>
+      <label>Work Experience</label>
+      <textarea id="experience" oninput="updateResume()">Software Engineer - Tech Corp (2022 - Present)
+- Built responsive user interfaces using React and reduced page load times by 30%.
+- Collaborated with cross-functional teams to deploy RESTful API integrations.
 
-        <!-- Summary -->
-        <div class="space-y-3">
-          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Professional Summary</h2>
-          <textarea id="in-summary" rows="3" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Summary statement...">Results-driven professional with 5+ years of experience in managing cross-functional projects, optimizing workflows, and delivering strategic business solutions.</textarea>
-        </div>
+Junior Developer - Web Solutions (2020 - 2022)
+- Maintained database systems and wrote automated unit tests.</textarea>
 
-        <!-- Work Experience -->
-        <div class="space-y-3">
-          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Work Experience</h2>
-          <textarea id="in-experience" rows="5" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Experience details...">Senior Project Specialist | Tech Solutions Inc. | 2021 - Present
-• Spearheaded cross-functional teams to deliver 15+ software releases on time.
-• Reduced operational bottlenecks by 25% through process automation.
+      <label>Education</label>
+      <textarea id="education" oninput="updateResume()">B.S. in Computer Science - University of Technology (2016 - 2020)</textarea>
 
-Project Coordinator | Innovate Co. | 2018 - 2021
-• Managed client communications and project documentation for key accounts.</textarea>
-        </div>
+      <label>Skills (Comma-separated)</label>
+      <input type="text" id="skills" value="JavaScript, React, Node.js, HTML/CSS, Git, SQL" oninput="updateResume()">
 
-        <!-- Education -->
-        <div class="space-y-3">
-          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Education</h2>
-          <textarea id="in-education" rows="3" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Education details...">Bachelor of Science in Business Administration
-State University | Graduated: 2018</textarea>
-        </div>
+      <label>Present Address</label>
+      <input type="text" id="address" value="123 Main Street, Apt 4B, New York, NY 10001" oninput="updateResume()">
 
-        <!-- Skills -->
-        <div class="space-y-3">
-          <h2 class="text-md font-bold text-gray-700 border-b pb-1">Skills</h2>
-          <textarea id="in-skills" rows="3" class="w-full text-base p-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none" placeholder="List skills...">Project Management, Data Analysis, Agile/Scrum, Process Optimization, Technical Writing</textarea>
-        </div>
-      </form>
+      <button onclick="downloadPDF()">Download ATS PDF</button>
     </div>
 
-    <!-- Right Panel: Live Mobile & Desktop Preview Sheet -->
-    <div id="panel-preview" class="hidden md:flex flex-1 bg-gray-200 overflow-y-auto p-4 flex-col items-center justify-start">
-      
-      <!-- Top Action Bar -->
-      <div class="w-full max-w-[210mm] flex justify-between items-center mb-3 no-print">
-        <span class="text-xs font-semibold text-gray-600 uppercase tracking-wider">A4 Preview Sheet</span>
-        <button onclick="downloadPDF()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-bold shadow transition-colors flex items-center gap-1">
-          <span>Download PDF</span>
-        </button>
+    <div class="preview-container">
+      <h2>Live Preview</h2>
+      <div id="resume-preview">
+        <div class="res-name" id="p-name">JOHN DOE</div>
+        <div class="res-contact" id="p-contact">+1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY</div>
+
+        <div class="res-section-title">Professional Summary</div>
+        <div class="res-text" id="p-summary"></div>
+
+        <div class="res-section-title">Work Experience</div>
+        <div class="res-text" id="p-experience"></div>
+
+        <div class="res-section-title">Education</div>
+        <div class="res-text" id="p-education"></div>
+
+        <div class="res-section-title">Skills</div>
+        <div class="res-text" id="p-skills"></div>
+
+        <div class="res-section-title">Present Address</div>
+        <div class="res-address" id="p-address"></div>
       </div>
-
-      <!-- Scrollable Wrapper for A4 sheet scaling on mobile devices -->
-      <div class="w-full overflow-x-auto flex justify-center py-2">
-        <div id="scale-wrapper" class="origin-top transform scale-[0.42] sm:scale-[0.65] md:scale-[0.85] lg:scale-100 transition-transform">
-          
-          <!-- Resume Document (A4 Container) -->
-          <div id="resume-sheet" class="a4-sheet p-[15mm] text-black shadow-xl text-sm leading-relaxed">
-            <!-- Name -->
-            <div id="pv-name" class="text-2xl font-bold uppercase border-b-2 border-black pb-1 text-center">SAWRABH KAR</div>
-            
-            <!-- Contact Info -->
-            <div id="pv-contact" class="text-xs text-center my-2 text-gray-800">
-              +1 123-456-7890 | john@example.com | linkedin.com/in/johndoe | New York, NY
-            </div>
-
-            <!-- Summary -->
-            <div class="mt-4">
-              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1">Professional Summary</h3>
-              <p id="pv-summary" class="whitespace-pre-line text-xs">Results-driven professional with 5+ years of experience in managing cross-functional projects...</p>
-            </div>
-
-            <!-- Experience -->
-            <div class="mt-4">
-              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1">Work Experience</h3>
-              <div id="pv-experience" class="whitespace-pre-line text-xs">Senior Project Specialist...</div>
-            </div>
-
-            <!-- Education -->
-            <div class="mt-4">
-              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1">Education</h3>
-              <div id="pv-education" class="whitespace-pre-line text-xs">Bachelor of Science...</div>
-            </div>
-
-            <!-- Skills -->
-            <div class="mt-4">
-              <h3 class="font-bold uppercase text-xs border-b border-gray-400 pb-0.5 mb-1">Skills</h3>
-              <div id="pv-skills" class="whitespace-pre-line text-xs">Project Management...</div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
     </div>
-
   </div>
 
-  <!-- JavaScript Application Logic -->
   <script>
-    // Real-time synchronization from form inputs to preview sheet
-    function updatePreview() {
-      document.getElementById('pv-name').innerText = document.getElementById('in-name').value || 'YOUR NAME';
-      document.getElementById('pv-contact').innerText = document.getElementById('in-contact').value || 'Contact Info';
-      document.getElementById('pv-summary').innerText = document.getElementById('in-summary').value || '';
-      document.getElementById('pv-experience').innerText = document.getElementById('in-experience').value || '';
-      document.getElementById('pv-education').innerText = document.getElementById('in-education').value || '';
-      document.getElementById('pv-skills').innerText = document.getElementById('in-skills').value || '';
+    function updateResume() {
+      document.getElementById('p-name').innerText = document.getElementById('name').value;
+      document.getElementById('p-contact').innerText = document.getElementById('contact').value;
+      document.getElementById('p-address').innerText = document.getElementById('address').value;
+      document.getElementById('p-summary').innerText = document.getElementById('summary').value;
+      document.getElementById('p-experience').innerText = document.getElementById('experience').value;
+      document.getElementById('p-education').innerText = document.getElementById('education').value;
+      document.getElementById('p-skills').innerText = document.getElementById('skills').value;
     }
 
-    // Toggle between Editor and Preview on mobile viewports
-    function switchMobileTab(tab) {
-      const editor = document.getElementById('panel-editor');
-      const preview = document.getElementById('panel-preview');
-      const btnEdit = document.getElementById('btn-tab-edit');
-      const btnPreview = document.getElementById('btn-tab-preview');
-
-      if (tab === 'edit') {
-        editor.classList.remove('hidden');
-        preview.classList.add('hidden');
-        btnEdit.className = "px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold shadow";
-        btnPreview.className = "px-5 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold";
-      } else {
-        editor.classList.add('hidden');
-        preview.classList.remove('hidden');
-        preview.classList.add('flex');
-        btnPreview.className = "px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold shadow";
-        btnEdit.className = "px-5 py-2 bg-gray-200 text-gray-700 rounded-md text-sm font-semibold";
-      }
-    }
-
-    // Fixed PDF Download: Zero cropping & single page alignment
     function downloadPDF() {
-      const originalSheet = document.getElementById('resume-sheet');
+      const { jsPDF } = window.jspdf;
+      const original = document.getElementById('resume-preview');
 
-      // 1. Clone original element
-      const clone = originalSheet.cloneNode(true);
+      // Clone the resume into an isolated, off-screen wrapper at a fixed width.
+      // Capturing the on-page element directly (inside the flex layout) is what
+      // causes html2canvas to miscalculate the capture region and clip the left edge.
+      const clone = original.cloneNode(true);
+      const wrapper = document.createElement('div');
+      wrapper.style.position = 'fixed';
+      wrapper.style.top = '0';
+      wrapper.style.left = '0';
+      wrapper.style.zIndex = '-1000';
+      wrapper.style.width = '800px';      // fixed pixel width = predictable A4 scaling
+      wrapper.style.margin = '0';
+      wrapper.style.background = '#ffffff';
 
-      // 2. Position clone strictly at viewport top-left behind screen
-      clone.style.position = 'fixed';
-      clone.style.top = '0';
-      clone.style.left = '0';
-      clone.style.zIndex = '-9999';
-      clone.style.transform = 'none'; // Clear CSS scale transforms
-      clone.style.margin = '0';
-      clone.style.boxShadow = 'none';
+      clone.style.width = '800px';
+      clone.style.boxSizing = 'border-box';
 
-      document.body.appendChild(clone);
-
-      // 3. Configure html2pdf to force exact 0,0 coordinates
-      const options = {
-        margin: [0, 0, 0, 0],
-        filename: 'Sawrabh_Kar_Resume.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          x: 0,
-          y: 0,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: 1200
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: 'avoid-all' }
+      // Media queries are based on viewport width, not the clone's width, so on a
+      // phone the mobile font sizes would otherwise leak into the PDF. Force the
+      // original (desktop) sizes here so the PDF always looks the same regardless
+      // of the device it was generated on.
+      clone.style.padding = '30px';
+      clone.style.minHeight = '600px';
+      const setSize = (selector, fontSize, extra = {}) => {
+        const el = clone.querySelector(selector);
+        if (!el) return;
+        el.style.fontSize = fontSize;
+        Object.assign(el.style, extra);
       };
+      setSize('.res-name', '24px');
+      setSize('.res-contact', '12px', { paddingBottom: '8px', marginBottom: '15px' });
+      setSize('.res-address', '12px');
+      clone.querySelectorAll('.res-section-title').forEach(el => {
+        el.style.fontSize = '14px';
+        el.style.marginTop = '15px';
+      });
+      clone.querySelectorAll('.res-text').forEach(el => {
+        el.style.fontSize = '12px';
+        el.style.lineHeight = '1.5';
+      });
 
-      // 4. Generate PDF and remove clone
-      html2pdf().set(options).from(clone).save().then(() => {
-        document.body.removeChild(clone);
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+
+      html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        windowWidth: 800,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0
+      }).then(canvas => {
+        document.body.removeChild(wrapper);
+
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgWidth = pageWidth;
+        const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        // First page
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+
+        // Additional pages if content overflows one A4 page
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+          heightLeft -= pageHeight;
+        }
+
+        pdf.save('ATS_Resume.pdf');
+      }).catch(err => {
+        document.body.removeChild(wrapper);
+        console.error('PDF generation failed:', err);
+        alert('Sorry, something went wrong generating the PDF. Please try again.');
       });
     }
 
-    // Initialize layout sync on launch
-    updatePreview();
+    // Initialize preview on page load
+    updateResume();
   </script>
 </body>
 </html>
